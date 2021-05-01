@@ -1,9 +1,13 @@
 import multiprocessing
 import time
 import random
+import asyncio
 from aiohttp import web
 import requests
 import aiohttp_debugtoolbar
+import aiohttp
+import concurrent.futures
+
 from aiohttp_debugtoolbar import toolbar_middleware_factory
 
 import time, requests
@@ -75,9 +79,11 @@ def createParser(list_currency):
 
 
 class RestFrame:
+    stack = []
     currencies = []
     currency_data = {}
     period = None
+    app = None
 
     def __init__(self, list_currency):
         for item in list_currency:
@@ -93,14 +99,36 @@ class RestFrame:
         self.currencies = [key for key, value in self.currency_data.items()]
         self.currencies.remove('RUB')
         print(self.currencies)
+        self.app = self.init()
+
+    async def set_currency(self, request):
+        name = request.match_info.get('name', "Anonymous")
+        txt = "Hello, {}".format(name)
+        data = await request.json()
+        # self.currency_data['current_rate'] = data['current_data']
+        # self.currency_data['prev_rate'] = data['prev_data']
+        for key, value in data.items():
+            self.currency_data[key] = value
+        return web.Response(text=txt)
 
     async def get_currency(self, request):
         name = request.match_info.get('name', "Anonymous")
         txt = "Hello, {} {}, {}".format(name, self.currency_data[name.upper()]['current_rate'], name.upper())
-        print(self.currency_data)
+        # print(self.currency_data)
         return web.Response(text=txt)
         # return web.Response(text="<h1> Async Rest API using aiohttp : Health OK </h1>",
         #                     content_type='text/html')
+
+    async def send_currency(self, key, session):
+        async with session.post(url='http://localhost:8000/' + key.lower() + '/set',
+                                json={key :self.currency_data[key]}) as response:
+            data = await response.text()
+
+    async def gather_tasks(self):
+        headers = {}
+        async with aiohttp.ClientSession(headers=headers) as session:
+            tasks = [self.send_currency(key, session) for key in self.currencies]
+            await asyncio.gather(*tasks)
 
     def send_post(self):
         response = requests.get("https://www.cbr-xml-daily.ru/daily_utf8.xml")
@@ -113,10 +141,17 @@ class RestFrame:
                 self.currency_data[key]['current_rate'], root.findall(".*[CharCode='" + key + "']/Value")[0].text
             print('print ', key, self.currency_data[key]['current_rate'])
 
+        loop = asyncio.get_event_loop()
+        future = asyncio.ensure_future(self.gather_tasks())
+        loop.run_until_complete(future)
+
     def start_schedul(self):
         while True:
             self.send_post()
-            time.sleep(5 - datetime.datetime.now().second % 5)
+            # print(self.currency_data)
+            time.sleep(10 - datetime.datetime.now().second % 10)
+            # await asyncio.sleep(1)
+            # await asyncio.sleep(5 - datetime.datetime.now().second % 5)
 
     async def init(self):
         app = web.Application()
@@ -126,13 +161,38 @@ class RestFrame:
         app.router.add_get("/amount/get", amount_get)
         app.router.add_post("/amount/set", amount_set)
         app.router.add_get("/{name}/get", self.get_currency)
+        app.router.add_post("/{name}/set", self.set_currency)
         app.router.add_post("/modify", modify_currency)
         aiohttp_debugtoolbar.setup(app)
         return app
 
     def start_server(self):
-        application = self.init()
-        web.run_app(application, port=8000)
+        web.run_app(self.app, port=8000)
+
+    # async def run(self):
+    #     self.stack.append(self.start_schedul)
+    #     self.stack.append(self.start_server)
+    #     while True:
+    #         task = self.stack.pop()
+    #         await task()
+    #         task = self.stack.pop()
+    #         await task()
+    #         self.stack.append(self.start_schedul)
+    #         self.stack.append(self.start_server)
+    #         # self.stack.append(self.start_server)
+    #         print('11')
+    #         await asyncio.sleep(1)
+
+
+# async def main():
+#     loop = asyncio.get_running_loop()
+#
+#     ## Options:
+#
+#     # 2. Run in a custom thread pool:
+#     with concurrent.futures.ThreadPoolExecutor() as pool:
+#         result = await loop.run_in_executor(pool, blocking_io)
+#         print('custom thread pool', result)
 
 
 if __name__ == "__main__":
@@ -143,6 +203,19 @@ if __name__ == "__main__":
     print(script_args)
     print(parser)
     rest_obj = RestFrame(list_currency=list_currency)
+    # rest_obj.start_server()
+    # loop = asyncio.get_running_loop()
+    # try:
+    #     asyncio.ensure_future(rest_obj.start_schedul())
+    #     # asyncio.ensure_future(rest_obj.start_server())
+    # except KeyboardInterrupt:
+    #     pass
+    # finally:
+    #     print("Closing Loop")
+    #     loop.close()
+    # running_loop = asyncio.get_event_loop()
+    #
+    # asyncio.(rest_obj.run(), loop=running_loop)
 
     aioserver = multiprocessing.Process(name='my_server', target=rest_obj.start_server)
     script_control = multiprocessing.Process(name='start_script', target=rest_obj.start_schedul)
