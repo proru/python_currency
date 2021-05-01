@@ -3,6 +3,8 @@ import time
 import random
 from aiohttp import web
 import requests
+import aiohttp_debugtoolbar
+from aiohttp_debugtoolbar import toolbar_middleware_factory
 
 import time, requests
 import datetime
@@ -32,22 +34,12 @@ async def hello(request):
                         content_type='text/html')
 
 
-async def get_usd(request):
-    print(request)
-    return web.Response(text="<h1> Async Rest API using aiohttp : Health OK </h1>",
-                        content_type='text/html')
-
-
-async def get_rub(request):
-    print(request)
-    return web.Response(text="<h1> Async Rest API using aiohttp : Health OK </h1>",
-                        content_type='text/html')
-
-
-async def get_eur(request):
-    print(request)
-    return web.Response(text="<h1> Async Rest API using aiohttp : Health OK </h1>",
-                        content_type='text/html')
+async def get_currency(request):
+    name = request.match_info.get('name', "Anonymous")
+    txt = "Hello, {}".format(name)
+    return web.Response(text=txt)
+    # return web.Response(text="<h1> Async Rest API using aiohttp : Health OK </h1>",
+    #                     content_type='text/html')
 
 
 async def amount_get(request):
@@ -102,17 +94,24 @@ class RestFrame:
         self.currencies.remove('RUB')
         print(self.currencies)
 
+    async def get_currency(self, request):
+        name = request.match_info.get('name', "Anonymous")
+        txt = "Hello, {} {}, {}".format(name, self.currency_data[name.upper()]['current_rate'], name.upper())
+        print(self.currency_data)
+        return web.Response(text=txt)
+        # return web.Response(text="<h1> Async Rest API using aiohttp : Health OK </h1>",
+        #                     content_type='text/html')
+
     def send_post(self):
         response = requests.get("https://www.cbr-xml-daily.ru/daily_utf8.xml")
         string_xml = response.content
         root = ET.fromstring(string_xml)
-        print('USD', root.findall(".*[CharCode='USD']/Value")[0].text, 'EUR',root.findall(".*[CharCode='EUR']/Value")[0].text)
+        # print('USD', root.findall(".*[CharCode='USD']/Value")[0].text, 'EUR',
+        #       root.findall(".*[CharCode='EUR']/Value")[0].text)
         for key in self.currencies:
             self.currency_data[key]['prev_rate'], self.currency_data[key]['current_rate'] = \
                 self.currency_data[key]['current_rate'], root.findall(".*[CharCode='" + key + "']/Value")[0].text
-        # print(root.findall(".*[CharCode='USD']/Value")[0].text)
-        # print(root.findall(".*[CharCode='RUB']/Value")[0].text)
-        # print('print', self.currency_data)
+            print('print ', key, self.currency_data[key]['current_rate'])
 
     def start_schedul(self):
         while True:
@@ -124,13 +123,11 @@ class RestFrame:
         app.router.add_get("/", health)
         app.router.add_get("/hello", hello)
         app.router.add_post("/v1/crypto/info", get_crypto_info)
-        app.router.add_get("/usd/get", get_usd)
-        app.router.add_get("/rub/get", get_rub)
-        app.router.add_get("/eur/get", get_eur)
         app.router.add_get("/amount/get", amount_get)
         app.router.add_post("/amount/set", amount_set)
+        app.router.add_get("/{name}/get", self.get_currency)
         app.router.add_post("/modify", modify_currency)
-
+        aiohttp_debugtoolbar.setup(app)
         return app
 
     def start_server(self):
