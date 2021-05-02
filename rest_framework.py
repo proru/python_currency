@@ -6,6 +6,7 @@ from aiohttp import web
 import requests
 import aiohttp_debugtoolbar
 import aiohttp
+import threading
 import concurrent.futures
 
 from aiohttp_debugtoolbar import toolbar_middleware_factory
@@ -119,17 +120,6 @@ class RestFrame:
         # return web.Response(text="<h1> Async Rest API using aiohttp : Health OK </h1>",
         #                     content_type='text/html')
 
-    async def send_currency(self, key, session):
-        async with session.post(url='http://localhost:8000/' + key.lower() + '/set',
-                                json={key :self.currency_data[key]}) as response:
-            data = await response.text()
-
-    async def gather_tasks(self):
-        headers = {}
-        async with aiohttp.ClientSession(headers=headers) as session:
-            tasks = [self.send_currency(key, session) for key in self.currencies]
-            await asyncio.gather(*tasks)
-
     def send_post(self):
         response = requests.get("https://www.cbr-xml-daily.ru/daily_utf8.xml")
         string_xml = response.content
@@ -141,19 +131,15 @@ class RestFrame:
                 self.currency_data[key]['current_rate'], root.findall(".*[CharCode='" + key + "']/Value")[0].text
             print('print ', key, self.currency_data[key]['current_rate'])
 
-        loop = asyncio.get_event_loop()
-        future = asyncio.ensure_future(self.gather_tasks())
-        loop.run_until_complete(future)
-
-    def start_schedul(self):
+    async def start_schedul(self):
         while True:
             self.send_post()
             # print(self.currency_data)
-            time.sleep(10 - datetime.datetime.now().second % 10)
+            # time.sleep(10 - datetime.datetime.now().second % 10)
             # await asyncio.sleep(1)
-            # await asyncio.sleep(5 - datetime.datetime.now().second % 5)
+            await asyncio.sleep(5 - datetime.datetime.now().second % 5)
 
-    async def init(self):
+    def init(self):
         app = web.Application()
         app.router.add_get("/", health)
         app.router.add_get("/hello", hello)
@@ -166,8 +152,27 @@ class RestFrame:
         aiohttp_debugtoolbar.setup(app)
         return app
 
-    def start_server(self):
-        web.run_app(self.app, port=8000)
+    async def start_server(self):
+        # runner = web.AppRunner(self.app)
+        # await runner.setup()
+        # site = web.TCPSite(runner, 'localhost', 8080)
+        # await site.start()
+        # # wait for finish signal
+        # await runner.cleanup()
+        web._run_app(self.app, port=8000)
+
+    async def main(self):
+        # Schedule three calls *concurrently*:
+        # runner = aiohttp.web.AppRunner(self.app)
+        # await runner.setup()
+        # site = aiohttp.web.TCPSite(runner, host='localhost', port=8000)
+        # await site.start()
+        # # wait forever
+        # await asyncio.Event().wait()
+        await asyncio.gather(
+            self.start_schedul(),
+            web._run_app(self.app, port=8000),
+        )
 
     # async def run(self):
     #     self.stack.append(self.start_schedul)
@@ -203,7 +208,27 @@ if __name__ == "__main__":
     print(script_args)
     print(parser)
     rest_obj = RestFrame(list_currency=list_currency)
+
+    asyncio.run(rest_obj.main())
     # rest_obj.start_server()
+    # loop = asyncio.get_event_loop()
+    # runner = aiohttp.web.AppRunner(rest_obj.app)
+    # loop.run_until_complete(runner.setup())
+    # # here you can specify the listen address and port
+    # site = aiohttp.web.TCPSite(runner, 'localhost', 8000)
+    # loop.run_until_complete(site.start())
+    # broadcast_data = loop.create_future()
+    #
+    # async def broadcast():
+    #     global broadcast_data
+    #     while True:
+    #         broadcast_data.set_result(datetime.datetime.now())
+    #         broadcast_data = loop.create_future()
+    #         print(broadcast_data)
+    #         await asyncio.sleep(1)
+    #
+    #
+    # loop.create_task(broadcast())
     # loop = asyncio.get_running_loop()
     # try:
     #     asyncio.ensure_future(rest_obj.start_schedul())
@@ -217,9 +242,11 @@ if __name__ == "__main__":
     #
     # asyncio.(rest_obj.run(), loop=running_loop)
 
-    aioserver = multiprocessing.Process(name='my_server', target=rest_obj.start_server)
-    script_control = multiprocessing.Process(name='start_script', target=rest_obj.start_schedul)
-    aioserver.start()
-    script_control.start()
+    # aioserver = multiprocessing.Process(name='my_server', target=rest_obj.start_server)
+    # aioserver = threading.Thread(name='my_server', target=rest_obj.start_server)
+    # # script_control = multiprocessing.Process(name='start_script', target=rest_obj.start_schedul)
+    # script_control = threading.Thread(name='start_script', target=rest_obj.start_schedul)
+    # aioserver.start()
+    # script_control.start()
     print('all start')
     # aioserver = multiprocessing.Process(name='my_server', target=start_server)
