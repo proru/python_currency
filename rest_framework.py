@@ -153,51 +153,21 @@ class RestFrame:
         return app
 
     async def start_server(self):
-        # runner = web.AppRunner(self.app)
-        # await runner.setup()
-        # site = web.TCPSite(runner, 'localhost', 8080)
-        # await site.start()
-        # # wait for finish signal
-        # await runner.cleanup()
-        web._run_app(self.app, port=8000)
+        runner = web.AppRunner(self.app)
+        await runner.setup()
+        site = web.TCPSite(runner, 'localhost', 8080)
+        await site.start()
+        print("======= Serving on http://127.0.0.1:8080/ ======")
+        # pause here for very long time by serving HTTP requests and
+        # waiting for keyboard interruption
+        await asyncio.Event().wait()
 
     async def main(self):
-        # Schedule three calls *concurrently*:
-        # runner = aiohttp.web.AppRunner(self.app)
-        # await runner.setup()
-        # site = aiohttp.web.TCPSite(runner, host='localhost', port=8000)
-        # await site.start()
-        # # wait forever
-        # await asyncio.Event().wait()
         await asyncio.gather(
             self.start_schedul(),
-            web._run_app(self.app, port=8000),
+            self.start_server(),
+            # web._run_app(self.app, port=8000),
         )
-
-    # async def run(self):
-    #     self.stack.append(self.start_schedul)
-    #     self.stack.append(self.start_server)
-    #     while True:
-    #         task = self.stack.pop()
-    #         await task()
-    #         task = self.stack.pop()
-    #         await task()
-    #         self.stack.append(self.start_schedul)
-    #         self.stack.append(self.start_server)
-    #         # self.stack.append(self.start_server)
-    #         print('11')
-    #         await asyncio.sleep(1)
-
-
-# async def main():
-#     loop = asyncio.get_running_loop()
-#
-#     ## Options:
-#
-#     # 2. Run in a custom thread pool:
-#     with concurrent.futures.ThreadPoolExecutor() as pool:
-#         result = await loop.run_in_executor(pool, blocking_io)
-#         print('custom thread pool', result)
 
 
 if __name__ == "__main__":
@@ -208,45 +178,5 @@ if __name__ == "__main__":
     print(script_args)
     print(parser)
     rest_obj = RestFrame(list_currency=list_currency)
-
     asyncio.run(rest_obj.main())
-    # rest_obj.start_server()
-    # loop = asyncio.get_event_loop()
-    # runner = aiohttp.web.AppRunner(rest_obj.app)
-    # loop.run_until_complete(runner.setup())
-    # # here you can specify the listen address and port
-    # site = aiohttp.web.TCPSite(runner, 'localhost', 8000)
-    # loop.run_until_complete(site.start())
-    # broadcast_data = loop.create_future()
-    #
-    # async def broadcast():
-    #     global broadcast_data
-    #     while True:
-    #         broadcast_data.set_result(datetime.datetime.now())
-    #         broadcast_data = loop.create_future()
-    #         print(broadcast_data)
-    #         await asyncio.sleep(1)
-    #
-    #
-    # loop.create_task(broadcast())
-    # loop = asyncio.get_running_loop()
-    # try:
-    #     asyncio.ensure_future(rest_obj.start_schedul())
-    #     # asyncio.ensure_future(rest_obj.start_server())
-    # except KeyboardInterrupt:
-    #     pass
-    # finally:
-    #     print("Closing Loop")
-    #     loop.close()
-    # running_loop = asyncio.get_event_loop()
-    #
-    # asyncio.(rest_obj.run(), loop=running_loop)
-
-    # aioserver = multiprocessing.Process(name='my_server', target=rest_obj.start_server)
-    # aioserver = threading.Thread(name='my_server', target=rest_obj.start_server)
-    # # script_control = multiprocessing.Process(name='start_script', target=rest_obj.start_schedul)
-    # script_control = threading.Thread(name='start_script', target=rest_obj.start_schedul)
-    # aioserver.start()
-    # script_control.start()
     print('all start')
-    # aioserver = multiprocessing.Process(name='my_server', target=start_server)
