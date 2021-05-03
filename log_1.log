@@ -1,0 +1,15 @@
+2021-05-03 16:06:21,924 : [INFO] : Starting Sorting
+2021-05-03 16:09:29,259 : [INFO] : Starting script
+2021-05-03 16:26:00,804 : [DEBUG] : line number:224Starting script
+2021-05-03 16:26:20,452 : [DEBUG] : line number: 224 Starting script
+2021-05-03 16:27:30,402 : [DEBUG] : line number: 224 Starting script
+2021-05-03 16:27:30,402 : [ERROR] : Traceback (most recent call last):
+  File "/home/purp/PycharmProjects/python_currency/rest_framework.py", line 224, in <module>
+    raise Exception
+Exception
+
+2021-05-03 16:27:59,556 : [ERROR] : Traceback (most recent call last):
+  File "/home/purp/PycharmProjects/python_currency/rest_framework.py", line 224, in <module>
+    raise Exception
+Exception
+
