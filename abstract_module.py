@@ -48,16 +48,17 @@ class AbstractRest(ABC):
         return parser
 
     @web.middleware
-    async def error_middleware(self, request: web.Request, handler: Callable[[web.Request], Awaitable[web.StreamResponse]],) -> web.StreamResponse:
+    async def error_middleware(self, request, handler):
         try:
             self.logger.info(request)
             return await handler(request)
-        except web.HTTPException:
+        except web.HTTPException as ex:
             self.logger.error(traceback.format_exc())
-        except asyncio.CancelledError:
+        except asyncio.CancelledError as ex:
             self.logger.error(traceback.format_exc())
         except Exception as ex:
             self.logger.error(traceback.format_exc())
+            raise
 
     @abstractmethod
     async def control_data(self) -> None:
@@ -74,7 +75,7 @@ class AbstractRest(ABC):
     async def start_server(self):
         runner = web.AppRunner(self.app)
         await runner.setup()
-        site = web.TCPSite(runner, 'localhost', 8080)
+        site = web.TCPSite(runner, '0.0.0.0', 8080)
         await site.start()
         self.logger.info("======= Serving on http://127.0.0.1:8080/ ======")
         print("======= Serving on http://127.0.0.1:8080/ ======")
