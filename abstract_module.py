@@ -35,7 +35,11 @@ class AbstractRest(ABC):
 
     @staticmethod
     def createParser(list_currency):
-        parser = argparse.ArgumentParser(description='Process some integers.')
+        parser = argparse.ArgumentParser(description="""Process some integers.
+        --{name_currency} [amount_currency]  - you may charcode of currency and set it 
+        amount for working with it
+        example: rest_framework.py --period 60 --usd 10 --eur 20 debug etc.
+        """)
         if '--debug' in list_currency:
             list_currency.remove('--debug')
         if '--period' in list_currency:
@@ -43,7 +47,9 @@ class AbstractRest(ABC):
         for item in list_currency:
             if item.startswith('--') and not item.startswith('--help'):
                 parser.add_argument(item, type=float)
-        parser.add_argument('--debug')
+        parser.add_argument('--debug', help=""" debug may have value 
+        verbose '1', 'true', 'True', 'y', 'Y', 'N' 
+        and info mode 0, false, False, n, N """)
         parser.add_argument('--period', type=int)
         return parser
 

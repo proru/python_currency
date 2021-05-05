@@ -8,6 +8,9 @@ function up {
     docker run $@ \
         --name $name_container \
         -v $(pwd)/logs:/app/logs \
+        -e PERIOD=30 \
+        -e DEBUG=1 \
+        -e NEXT_PARAMS="--usd 10 --eur 20" \
         -p 8080:8080 \
         -d $name_container
 }
