@@ -10,7 +10,7 @@ function up {
         -v $(pwd)/logs:/app/logs \
         -e PERIOD=30 \
         -e DEBUG=1 \
-        -e NEXT_PARAMS="--usd 10 --eur 20" \
+        -e NEXT_PARAMS="--usd 10 --eur 20 --rub 30" \
         -p 8080:8080 \
         -d $name_container
 }
