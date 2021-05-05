@@ -26,3 +26,4 @@ pip install -r /app/requirements.txt
 python3 rest_framework.py --debug 1 --usd 10 --rub 20 --eur 30 --period 60
 
 docker run --name rest_script -v $(pwd)/logs:/app/logs -e PERIOD=30  -e DEBUG=1 -e NEXT_PARAMS="--usd 10 --eur 20"  -p 8080:8080 -d rest_script
+docker run --name rest_script -v $(pwd)/logs:/app/logs -e PERIOD=30  -e DEBUG=1 -e NEXT_PARAMS="--usd 10 --eur 20 --byn 30 --dkk 40"  -p 8080:8080 -d rest_script
