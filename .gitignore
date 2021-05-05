@@ -2,6 +2,7 @@
 .idea
 logs/*
 venv
+__pycache__/*
 .ided/*
 .idea/vcs.xml
 .idea/.gitignore
