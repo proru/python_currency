@@ -1,7 +1,6 @@
 /venv/
 .idea
-log_1.log
-logs
+logs/*
 venv
 .ided/*
 .idea/vcs.xml
