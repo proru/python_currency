@@ -17,7 +17,7 @@ class RestFrame(AbstractRest):
 
     async def amount_get(self, request):
         txt = 'amount currencies'
-        for key in self.currencies:
+        for key in self.currency_data.keys():
             txt = txt + ' / ' + key + ': ' + str(self.currency_data[key]['current_value'])
         txt = txt + '\ncurrencies rate'
         for key in self.currencies:

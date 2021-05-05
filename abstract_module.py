@@ -20,11 +20,13 @@ class AbstractRest(ABC):
 
     def __init__(self, list_currency, script_args, logger):
         self.currencies = list(filter(lambda x: x.startswith('--') and not x.startswith('--help'), list_currency))
+        if '--rub' not in self.currencies:
+            self.currencies.append('--rub')
         for key in self.currencies:
             self.currency_data[key.replace('-', '')] = {
-                'prev_value': script_args.__dict__[key.replace('-', '')],
+                'prev_value': script_args.__dict__.get(key.replace('-', '')),
                 'prev_rate': None,
-                'current_value': script_args.__dict__[key.replace('-', '')],
+                'current_value': script_args.__dict__.get(key.replace('-', '')),
                 'current_rate': None,
             }
         self.logger = logger
